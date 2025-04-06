@@ -11,13 +11,16 @@
     <Company>Your Company</Company>
     <Description>A library with string extension methods</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/JophielSerrano/301326117-Serrano-_Lab4</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/JophielSerrano/301326117-Serrano-_Lab4</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/yourusername/repo</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/yourusername/repo</RepositoryUrl>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    
+    <!-- Explicitly specify README file -->
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
-  
-   <ItemGroup>
+
+  <!-- Include README in package -->
+  <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="\"/>
   </ItemGroup>
 </Project>
