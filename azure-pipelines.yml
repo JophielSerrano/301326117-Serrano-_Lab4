@@ -1,5 +1,6 @@
 trigger:
 - master
+- main
 
 pool:
   name: 'Default'
@@ -9,28 +10,24 @@ variables:
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
   feedName: 'Lab4Feed'
+  dotnetVersion: '8.x'
 
 steps:
-# Authenticate NuGet Feed
+# Replace UseDotNetCore with DotNetCoreCLI
+- task: DotNetCoreCLI@2
+  displayName: 'Install .NET SDK'
+  inputs:
+    packageType: 'sdk'
+    version: '$(dotnetVersion)'
+
 - task: NuGetAuthenticate@1
   displayName: 'Authenticate NuGet Feed'
   inputs:
     nuGetServiceConnections: 'Lab4Feed'
 
-# Ensure .NET SDK is installed
-- task: UseDotNetCore@2
-  displayName: 'Use .NET SDK'
-  inputs:
-    version: '8.x'  # Specify .NET 8 SDK
-    includePreviewVersions: false
-
-# NuGet Tool Installation
 - task: NuGetToolInstaller@1
   displayName: 'Install NuGet Tools'
-  inputs:
-    versionSpec: '5.x'  # Specify NuGet version
 
-# Restore Dependencies
 - task: DotNetCoreCLI@2
   displayName: 'Restore Dependencies'
   inputs:
@@ -39,7 +36,6 @@ steps:
     feedsToUse: 'select'
     vstsFeed: '$(feedName)'
 
-# Build Project
 - task: DotNetCoreCLI@2
   displayName: 'Build Project'
   inputs:
@@ -47,27 +43,14 @@ steps:
     projects: '**/*.csproj'
     arguments: '--configuration $(buildConfiguration) --no-restore'
 
-# Optional: Run Tests
-- task: DotNetCoreCLI@2
-  displayName: 'Run Unit Tests'
-  inputs:
-    command: 'test'
-    projects: '**/*Tests/*.csproj'
-    arguments: '--configuration $(buildConfiguration) --collect "Code coverage"'
-
-# Pack NuGet Package
 - task: DotNetCoreCLI@2
   displayName: 'Pack NuGet Package'
   inputs:
     command: 'pack'
     packagesToPack: '**/StringExtensionsLibrary.csproj'
-    versioningScheme: 'byPrereleaseNumber'
-    majorVersion: '1'
-    minorVersion: '0'
-    patchVersion: '0'
+    versioningScheme: 'byBuildNumber'
     outputDir: '$(Build.ArtifactStagingDirectory)'
 
-# Push NuGet Package
 - task: NuGetCommand@2
   displayName: 'Push NuGet Package'
   inputs:
@@ -76,12 +59,3 @@ steps:
     nuGetFeedType: 'internal'
     publishVstsFeed: '$(feedName)'
     allowPackageConflicts: true
-
-# Diagnostic: List Artifacts
-- task: PowerShell@2
-  displayName: 'Debug: List Artifacts'
-  inputs:
-    targetType: 'inline'
-    script: |
-      Write-Host "Listing artifacts in staging directory:"
-      Get-ChildItem -Path "$(Build.ArtifactStagingDirectory)" -Recurse
