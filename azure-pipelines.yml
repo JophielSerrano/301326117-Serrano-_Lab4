@@ -10,52 +10,51 @@ variables:
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
   feedName: 'Lab4Feed'
+  feedUrl: 'https://pkgs.dev.azure.com/Comp367001-JNS/_packaging/Lab4Feed/nuget/v3/index.json'
 
 steps:
+# Comprehensive Initial Diagnostics
 - powershell: |
-    # Check NuGet Configuration
-    Write-Host "NuGet Configuration Details:"
+    # System and Environment Diagnostics
+    Write-Host "=== System Diagnostics ==="
     
-    # List NuGet Sources
-    Write-Host "`nNuGet Sources:"
+    # Operating System Details
+    $osInfo = Get-CimInstance Win32_OperatingSystem
+    Write-Host "OS: $($osInfo.Caption)"
+    Write-Host "Version: $($osInfo.Version)"
+    
+    # NuGet and .NET Diagnostics
+    Write-Host "`n=== NuGet and .NET Diagnostics ==="
     try {
-        nuget.exe sources
+      # Check NuGet Sources
+      Write-Host "NuGet Sources:"
+      nuget.exe sources
     } catch {
-        Write-Host "NuGet.exe not found. Using dotnet CLI."
-        dotnet nuget list source
-    }
-    
-    # Verify Package Files
-    Write-Host "`nPackage Files:"
-    Get-ChildItem "$(Build.ArtifactStagingDirectory)" -Filter *.nupkg | ForEach-Object {
-        Write-Host "Package: $($_.FullName)"
-        Write-Host "Size: $($_.Length) bytes"
+      Write-Host "NuGet.exe not found. Fallback to dotnet CLI."
+      dotnet nuget list source
     }
     
     # .NET SDK Information
     Write-Host "`n.NET SDK Versions:"
     dotnet --list-sdks
-    
-    # Check Environment Variables
-    Write-Host "`nRelevant Environment Variables:"
-    Get-ChildItem Env: | Where-Object { 
-        $_.Name -like '*NUGET*' -or 
-        $_.Name -like '*DOTNET*' -or 
-        $_.Name -like '*SYSTEM*'
-    } | Format-Table Name, Value
-  displayName: 'Comprehensive Diagnostics'
-  
+    dotnet --version
+  displayName: 'System and Environment Diagnostics'
+
+# NuGet and .NET Tool Installation
 - task: NuGetToolInstaller@1
   displayName: 'Install NuGet'
   inputs:
     versionSpec: '5.x'
+    checkLatest: true
 
 - task: DotNetCoreCLI@2
   displayName: 'Install .NET SDK'
   inputs:
     packageType: 'sdk'
     version: '8.x'
+    includePreviewVersions: false
 
+# Authentication and Restore
 - task: NuGetAuthenticate@1
   displayName: 'Authenticate NuGet Feed'
   inputs:
@@ -69,6 +68,7 @@ steps:
     feedsToUse: 'select'
     vstsFeed: '$(feedName)'
 
+# Build and Pack
 - task: DotNetCoreCLI@2
   displayName: 'Build Project'
   inputs:
@@ -87,9 +87,10 @@ steps:
     majorVersion: '1'
     minorVersion: '0'
 
-# Alternative Push Methods
+# Multiple Push Methods with Error Handling
 - task: NuGetCommand@2
-  displayName: 'Push NuGet Package'
+  displayName: 'Push NuGet Package (NuGet Command)'
+  continueOnError: true
   inputs:
     command: 'push'
     packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg'
@@ -97,22 +98,47 @@ steps:
     publishVstsFeed: '$(feedName)'
     allowPackageConflicts: true
 
-# Fallback Push Method
+# Fallback Push Method with Detailed Logging
 - script: |
-    dotnet nuget push $(Build.ArtifactStagingDirectory)/**/*.nupkg \
-      --source "https://pkgs.dev.azure.com/Comp367001-JNS/_packaging/Lab4Feed/nuget/v3/index.json" \
+    echo "Attempting to push NuGet package..."
+    echo "Artifact Directory: $(Build.ArtifactStagingDirectory)"
+    echo "Feed URL: $(feedUrl)"
+    
+    # List packages for verification
+    dir "$(Build.ArtifactStagingDirectory)\*.nupkg"
+    
+    # Push with explicit error handling
+    dotnet nuget push "$(Build.ArtifactStagingDirectory)\**\*.nupkg" ^
+      --source "$(feedUrl)" ^
       --api-key AzureDevOps
   displayName: 'Fallback NuGet Push'
   env:
     SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 
-# Diagnostic Logging
+# Final Diagnostic Logging
 - powershell: |
-    Write-Host "NuGet Version:"
-    nuget.exe help | Select-String "Version"
+    Write-Host "=== Final Package Diagnostics ==="
     
-    Write-Host "`nPackages in Artifact Directory:"
-    Get-ChildItem "$(Build.ArtifactStagingDirectory)" -Filter *.nupkg | ForEach-Object {
-      Write-Host $_.FullName
+    # NuGet Version
+    try {
+      $nugetVersion = (nuget.exe help | Select-String "Version").ToString()
+      Write-Host "NuGet Version: $nugetVersion"
+    } catch {
+      Write-Host "Could not retrieve NuGet version"
     }
-  displayName: 'NuGet Diagnostics'
+    
+    # Packages in Artifact Directory
+    Write-Host "`nPackages in Artifact Directory:"
+    $packages = Get-ChildItem "$(Build.ArtifactStagingDirectory)" -Filter *.nupkg
+    
+    if ($packages.Count -eq 0) {
+      Write-Host "No packages found in artifact directory!"
+    } else {
+      $packages | ForEach-Object {
+        Write-Host "Package: $($_.FullName)"
+        Write-Host "Size: $($_.Length) bytes"
+        Write-Host "Created: $($_.CreationTime)"
+      }
+    }
+  displayName: 'Final Package Diagnostics'
+  condition: always() # Run even if previous steps fail
