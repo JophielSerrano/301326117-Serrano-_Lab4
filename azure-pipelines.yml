@@ -10,23 +10,24 @@ variables:
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
   feedName: 'Lab4Feed'
-  feedUrl: 'https://pkgs.dev.azure.com/Comp367001-JNS/_packaging/Lab4Feed/nuget/v3/index.json'
 
 steps:
-# Ensure NuGet is available
 - task: NuGetToolInstaller@1
   displayName: 'Install NuGet'
   inputs:
     versionSpec: '5.x'
-    checkLatest: true
 
-# Authenticate NuGet Feed
+- task: DotNetCoreCLI@2
+  displayName: 'Install .NET SDK'
+  inputs:
+    packageType: 'sdk'
+    version: '8.x'
+
 - task: NuGetAuthenticate@1
   displayName: 'Authenticate NuGet Feed'
   inputs:
     nuGetServiceConnections: 'Lab4Feed'
 
-# Restore Dependencies
 - task: DotNetCoreCLI@2
   displayName: 'Restore Dependencies'
   inputs:
@@ -35,7 +36,13 @@ steps:
     feedsToUse: 'select'
     vstsFeed: '$(feedName)'
 
-# Pack NuGet Package
+- task: DotNetCoreCLI@2
+  displayName: 'Build Project'
+  inputs:
+    command: 'build'
+    projects: '**/*.csproj'
+    arguments: '--configuration $(buildConfiguration) --no-restore'
+
 - task: DotNetCoreCLI@2
   displayName: 'Pack NuGet Package'
   inputs:
@@ -47,20 +54,20 @@ steps:
     majorVersion: '1'
     minorVersion: '0'
 
-# Push NuGet Package using DotNet CLI
-- task: DotNetCoreCLI@2
+# Alternative Push Methods
+- task: NuGetCommand@2
   displayName: 'Push NuGet Package'
   inputs:
-    command: 'nuget'
-    nuGetCommand: 'push'
+    command: 'push'
     packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg'
     nuGetFeedType: 'internal'
     publishVstsFeed: '$(feedName)'
+    allowPackageConflicts: true
 
 # Fallback Push Method
 - script: |
     dotnet nuget push $(Build.ArtifactStagingDirectory)/**/*.nupkg \
-      --source "$(feedUrl)" \
+      --source "https://pkgs.dev.azure.com/Comp367001-JNS/_packaging/Lab4Feed/nuget/v3/index.json" \
       --api-key AzureDevOps
   displayName: 'Fallback NuGet Push'
   env:
@@ -68,14 +75,11 @@ steps:
 
 # Diagnostic Logging
 - powershell: |
-    Write-Host "Packages in Artifact Directory:"
+    Write-Host "NuGet Version:"
+    nuget.exe help | Select-String "Version"
+    
+    Write-Host "`nPackages in Artifact Directory:"
     Get-ChildItem "$(Build.ArtifactStagingDirectory)" -Filter *.nupkg | ForEach-Object {
       Write-Host $_.FullName
     }
-    
-    Write-Host "`n.NET SDK Versions:"
-    dotnet --list-sdks
-    
-    Write-Host "`nNuGet Sources:"
-    dotnet nuget list source
-  displayName: 'Diagnostics and Logging'
+  displayName: 'NuGet Diagnostics'
