@@ -7,7 +7,7 @@
     {
         static void Main(string[] args)
         {
-            string[] testStrings = { "Hello", "world", "Testing", "" };
+            string[] testStrings = { "Hello", "world", "Azure", "devops" };
 
             foreach (var str in testStrings)
             {
