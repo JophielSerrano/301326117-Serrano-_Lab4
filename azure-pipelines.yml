@@ -1,5 +1,6 @@
 trigger:
 - master
+- main
 
 pool:
   name: 'Default'
@@ -9,6 +10,7 @@ variables:
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
   feedName: 'Lab4Feed'
+  # Use Build ID for unique versioning
   packageVersion: '1.0.$(Build.BuildId)'
 
 steps:
@@ -45,12 +47,9 @@ steps:
     packagesToPack: '**/StringExtensionsLibrary.csproj'
     configuration: '$(buildConfiguration)'
     outputDir: '$(Build.ArtifactStagingDirectory)'
-    versioningScheme: 'byEnvVar'
-    versionEnvVar: 'PACKAGE_VERSION'
-
-- bash: |
-    echo "##vso[task.setvariable variable=PACKAGE_VERSION]$(packageVersion)"
-  displayName: 'Set Package Version'
+    versioningScheme: 'byPrereleaseNumber'
+    majorVersion: '1'
+    minorVersion: '0'
 
 - task: NuGetCommand@2
   displayName: 'Push NuGet Package'
@@ -60,3 +59,9 @@ steps:
     nuGetFeedType: 'internal'
     publishVstsFeed: '$(feedName)'
     allowPackageConflicts: true
+
+# Diagnostic Logging
+- bash: |
+    echo "Package created:"
+    ls -la "$(Build.ArtifactStagingDirectory)"
+  displayName: 'List Artifacts'
