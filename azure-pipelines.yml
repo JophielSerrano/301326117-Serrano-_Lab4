@@ -38,6 +38,3 @@ steps:
     packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg'
     nuGetFeedType: 'internal'
     publishVstsFeed: 'Lab4Feed'
-  env:
-    # Explicitly set credentials
-    NUGET_CREDENTIALPROVIDER_SESSIONTOKENCACHE: 'true'
