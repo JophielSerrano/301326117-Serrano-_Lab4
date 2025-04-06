@@ -33,13 +33,12 @@ steps:
     majorVersion: '1'
     minorVersion: '0'
     patchVersion: '0'
-
+    outputDir: '$(Build.ArtifactStagingDirectory)'
 
 - task: NuGetCommand@2
   inputs:
     command: 'push'
     packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg'
     nuGetFeedType: 'internal'
-    publishVstsFeed: '$(feedName)'
-  env:
-    NUGET_CREDENTIALPROVIDER_SESSIONTOKENCACHE: 'true'
+    publishVstsFeed: 'Lab4Feed'  # Use the exact feed name
+    allowPackageConflicts: true   # Allow overwriting existing packages
