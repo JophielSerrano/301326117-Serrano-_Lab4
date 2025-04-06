@@ -1,4 +1,4 @@
-﻿namespace StringExtensionsLibrary
+﻿namespace StringExtensionsLibraryJNS
 {
     public static class StringExtensions
     {

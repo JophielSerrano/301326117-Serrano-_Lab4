@@ -6,6 +6,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ClassLibrary1\StringExtensionsLibrary.csproj" />
+    <PackageReference Include="StringExtensionsLibrary" Version="1.0.3" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ClassLibrary1\StringExtensionsLibraryJNS.csproj" />
   </ItemGroup>
 </Project>

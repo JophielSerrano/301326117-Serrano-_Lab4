@@ -1,4 +1,4 @@
-﻿using StringExtensionsLibrary;
+﻿using StringExtensionsLibraryJNS;
 
 
 
