@@ -12,6 +12,39 @@ variables:
   feedName: 'Lab4Feed'
 
 steps:
+- powershell: |
+    # Check NuGet Configuration
+    Write-Host "NuGet Configuration Details:"
+    
+    # List NuGet Sources
+    Write-Host "`nNuGet Sources:"
+    try {
+        nuget.exe sources
+    } catch {
+        Write-Host "NuGet.exe not found. Using dotnet CLI."
+        dotnet nuget list source
+    }
+    
+    # Verify Package Files
+    Write-Host "`nPackage Files:"
+    Get-ChildItem "$(Build.ArtifactStagingDirectory)" -Filter *.nupkg | ForEach-Object {
+        Write-Host "Package: $($_.FullName)"
+        Write-Host "Size: $($_.Length) bytes"
+    }
+    
+    # .NET SDK Information
+    Write-Host "`n.NET SDK Versions:"
+    dotnet --list-sdks
+    
+    # Check Environment Variables
+    Write-Host "`nRelevant Environment Variables:"
+    Get-ChildItem Env: | Where-Object { 
+        $_.Name -like '*NUGET*' -or 
+        $_.Name -like '*DOTNET*' -or 
+        $_.Name -like '*SYSTEM*'
+    } | Format-Table Name, Value
+  displayName: 'Comprehensive Diagnostics'
+  
 - task: NuGetToolInstaller@1
   displayName: 'Install NuGet'
   inputs:
