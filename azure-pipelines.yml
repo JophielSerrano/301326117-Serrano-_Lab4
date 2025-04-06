@@ -10,25 +10,23 @@ variables:
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
   feedName: 'Lab4Feed'
+  feedUrl: 'https://pkgs.dev.azure.com/Comp367001-JNS/_packaging/Lab4Feed/nuget/v3/index.json'
 
 steps:
-# Diagnostic Logging for Permissions
-- powershell: |
-    Write-Host "Build Service Principal ID: $(System.AccessToken)"
-    Write-Host "Current User: $env:USERNAME"
-  displayName: 'Diagnose User Context'
-
-- task: DotNetCoreCLI@2
-  displayName: 'Install .NET SDK'
+# Ensure NuGet is available
+- task: NuGetToolInstaller@1
+  displayName: 'Install NuGet'
   inputs:
-    packageType: 'sdk'
-    version: '8.0'
+    versionSpec: '5.x'
+    checkLatest: true
 
+# Authenticate NuGet Feed
 - task: NuGetAuthenticate@1
   displayName: 'Authenticate NuGet Feed'
   inputs:
     nuGetServiceConnections: 'Lab4Feed'
 
+# Restore Dependencies
 - task: DotNetCoreCLI@2
   displayName: 'Restore Dependencies'
   inputs:
@@ -37,13 +35,7 @@ steps:
     feedsToUse: 'select'
     vstsFeed: '$(feedName)'
 
-- task: DotNetCoreCLI@2
-  displayName: 'Build Project'
-  inputs:
-    command: 'build'
-    projects: '**/*.csproj'
-    arguments: '--configuration $(buildConfiguration) --no-restore'
-
+# Pack NuGet Package
 - task: DotNetCoreCLI@2
   displayName: 'Pack NuGet Package'
   inputs:
@@ -55,7 +47,7 @@ steps:
     majorVersion: '1'
     minorVersion: '0'
 
-# Alternative Push Method
+# Push NuGet Package using DotNet CLI
 - task: DotNetCoreCLI@2
   displayName: 'Push NuGet Package'
   inputs:
@@ -65,10 +57,25 @@ steps:
     nuGetFeedType: 'internal'
     publishVstsFeed: '$(feedName)'
 
+# Fallback Push Method
+- script: |
+    dotnet nuget push $(Build.ArtifactStagingDirectory)/**/*.nupkg \
+      --source "$(feedUrl)" \
+      --api-key AzureDevOps
+  displayName: 'Fallback NuGet Push'
+  env:
+    SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+
 # Diagnostic Logging
 - powershell: |
     Write-Host "Packages in Artifact Directory:"
     Get-ChildItem "$(Build.ArtifactStagingDirectory)" -Filter *.nupkg | ForEach-Object {
       Write-Host $_.FullName
     }
-  displayName: 'List NuGet Packages'
+    
+    Write-Host "`n.NET SDK Versions:"
+    dotnet --list-sdks
+    
+    Write-Host "`nNuGet Sources:"
+    dotnet nuget list source
+  displayName: 'Diagnostics and Logging'
