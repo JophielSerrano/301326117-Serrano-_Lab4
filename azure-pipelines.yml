@@ -22,7 +22,7 @@ steps:
   displayName: 'Install .NET SDK'
   inputs:
     packageType: 'sdk'
-    version: '8.4'
+    version: '8.0'
 
 - task: NuGetAuthenticate@1
   displayName: 'Authenticate NuGet Feed'
