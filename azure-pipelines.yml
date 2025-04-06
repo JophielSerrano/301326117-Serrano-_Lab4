@@ -24,9 +24,8 @@ steps:
 
 - task: DotNetCoreCLI@2
   inputs:
-    command: 'build'
-    projects: '**/*.csproj'
-    arguments: '--configuration $(buildConfiguration)'
+    command: 'nuget'
+    arguments: 'push $(Build.ArtifactStagingDirectory)/**/*.nupkg -s $(nugetFeedSource) -k AZP0'
 
 - task: DotNetCoreCLI@2
   inputs:
