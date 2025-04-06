@@ -1,6 +1,5 @@
 trigger:
 - master
-- main
 
 pool:
   name: 'Default'
@@ -10,23 +9,22 @@ variables:
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
   feedName: 'Lab4Feed'
-  dotnetVersion: '8.x'
+  # Explicitly define version
+  majorVersion: '1'
+  minorVersion: '0'
+  patchVersion: '$(Build.BuildId)'  # Use Build ID for unique versioning
 
 steps:
-# Replace UseDotNetCore with DotNetCoreCLI
 - task: DotNetCoreCLI@2
   displayName: 'Install .NET SDK'
   inputs:
     packageType: 'sdk'
-    version: '$(dotnetVersion)'
+    version: '8.x'
 
 - task: NuGetAuthenticate@1
   displayName: 'Authenticate NuGet Feed'
   inputs:
     nuGetServiceConnections: 'Lab4Feed'
-
-- task: NuGetToolInstaller@1
-  displayName: 'Install NuGet Tools'
 
 - task: DotNetCoreCLI@2
   displayName: 'Restore Dependencies'
@@ -48,8 +46,14 @@ steps:
   inputs:
     command: 'pack'
     packagesToPack: '**/StringExtensionsLibrary.csproj'
-    versioningScheme: 'byBuildNumber'
-    outputDir: '$(Build.ArtifactStagingDirectory)'
+    # Explicit versioning configuration
+    versioningScheme: 'byEnvVar'
+    versionEnvVar: 'CUSTOM_PACKAGE_VERSION'
+
+# Set custom version before packing
+- bash: |
+    echo "##vso[task.setvariable variable=CUSTOM_PACKAGE_VERSION]$(majorVersion).$(minorVersion).$(patchVersion)"
+  displayName: 'Set Package Version'
 
 - task: NuGetCommand@2
   displayName: 'Push NuGet Package'
@@ -59,3 +63,10 @@ steps:
     nuGetFeedType: 'internal'
     publishVstsFeed: '$(feedName)'
     allowPackageConflicts: true
+
+# Diagnostic Logging
+- bash: |
+    echo "Build Number: $(Build.BuildNumber)"
+    echo "Build ID: $(Build.BuildId)"
+    echo "Package Version: $(CUSTOM_PACKAGE_VERSION)"
+  displayName: 'Version Diagnostics'
