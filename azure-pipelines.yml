@@ -9,10 +9,7 @@ variables:
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
   feedName: 'Lab4Feed'
-  # Explicitly define version
-  majorVersion: '1'
-  minorVersion: '0'
-  patchVersion: '$(Build.BuildId)'  # Use Build ID for unique versioning
+  packageVersion: '1.0.$(Build.BuildId)'
 
 steps:
 - task: DotNetCoreCLI@2
@@ -46,13 +43,13 @@ steps:
   inputs:
     command: 'pack'
     packagesToPack: '**/StringExtensionsLibrary.csproj'
-    # Explicit versioning configuration
+    configuration: '$(buildConfiguration)'
+    outputDir: '$(Build.ArtifactStagingDirectory)'
     versioningScheme: 'byEnvVar'
-    versionEnvVar: 'CUSTOM_PACKAGE_VERSION'
+    versionEnvVar: 'PACKAGE_VERSION'
 
-# Set custom version before packing
 - bash: |
-    echo "##vso[task.setvariable variable=CUSTOM_PACKAGE_VERSION]$(majorVersion).$(minorVersion).$(patchVersion)"
+    echo "##vso[task.setvariable variable=PACKAGE_VERSION]$(packageVersion)"
   displayName: 'Set Package Version'
 
 - task: NuGetCommand@2
@@ -63,10 +60,3 @@ steps:
     nuGetFeedType: 'internal'
     publishVstsFeed: '$(feedName)'
     allowPackageConflicts: true
-
-# Diagnostic Logging
-- bash: |
-    echo "Build Number: $(Build.BuildNumber)"
-    echo "Build ID: $(Build.BuildId)"
-    echo "Package Version: $(CUSTOM_PACKAGE_VERSION)"
-  displayName: 'Version Diagnostics'
