@@ -16,8 +16,8 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
-
-  <ItemGroup>
+  
+   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="\"/>
   </ItemGroup>
 </Project>
