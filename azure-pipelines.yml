@@ -1,5 +1,5 @@
 trigger:
-- main
+- master
 
 pool:
   name: 'Default'
@@ -8,8 +8,6 @@ variables:
   solution: '**/*.sln'
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
-  # Add NuGet feed source
-  nugetFeedSource: 'https://pkgs.dev.azure.com/Comp367001-JNS/_packaging/Lab4Feed/nuget/v3/index.json'
 
 steps:
 - task: NuGetToolInstaller@1
@@ -41,4 +39,5 @@ steps:
     nuGetFeedType: 'internal'
     publishVstsFeed: 'Lab4Feed'
   env:
+    # Explicitly set credentials
     NUGET_CREDENTIALPROVIDER_SESSIONTOKENCACHE: 'true'
