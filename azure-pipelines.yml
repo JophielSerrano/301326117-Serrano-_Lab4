@@ -10,15 +10,19 @@ variables:
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
   feedName: 'Lab4Feed'
-  # Use Build ID for unique versioning
-  packageVersion: '1.0.$(Build.BuildId)'
 
 steps:
+# Diagnostic Logging for Permissions
+- powershell: |
+    Write-Host "Build Service Principal ID: $(System.AccessToken)"
+    Write-Host "Current User: $env:USERNAME"
+  displayName: 'Diagnose User Context'
+
 - task: DotNetCoreCLI@2
   displayName: 'Install .NET SDK'
   inputs:
     packageType: 'sdk'
-    version: '8.0'
+    version: '8.x'
 
 - task: NuGetAuthenticate@1
   displayName: 'Authenticate NuGet Feed'
@@ -51,17 +55,20 @@ steps:
     majorVersion: '1'
     minorVersion: '0'
 
-- task: NuGetCommand@2
+# Alternative Push Method
+- task: DotNetCoreCLI@2
   displayName: 'Push NuGet Package'
   inputs:
-    command: 'push'
+    command: 'nuget'
+    nuGetCommand: 'push'
     packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg'
     nuGetFeedType: 'internal'
     publishVstsFeed: '$(feedName)'
-    allowPackageConflicts: true
 
 # Diagnostic Logging
-- bash: |
-    echo "Package created:"
-    ls -la "$(Build.ArtifactStagingDirectory)"
-  displayName: 'List Artifacts'
+- powershell: |
+    Write-Host "Packages in Artifact Directory:"
+    Get-ChildItem "$(Build.ArtifactStagingDirectory)" -Filter *.nupkg | ForEach-Object {
+      Write-Host $_.FullName
+    }
+  displayName: 'List NuGet Packages'
