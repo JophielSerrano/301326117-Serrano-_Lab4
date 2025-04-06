@@ -42,3 +42,5 @@ steps:
     nuGetFeedType: 'internal'
     publishVstsFeed: 'Lab4Feed'  # Use the exact feed name
     allowPackageConflicts: true   # Allow overwriting existing packages
+  env:
+    SYSTEM_ACCESSTOKEN: $(System.AccessToken)
